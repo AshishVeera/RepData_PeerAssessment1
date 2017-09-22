@@ -8,17 +8,20 @@ output: html_document
 This document presents the results of peer assessments 1 of course Reproducible Research on coursera. This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.  
 
 ### Prepare the R environment
-```{r prepare, echo=TRUE}
+
+```r
 library(knitr)
 opts_chunk$set(echo = TRUE, results = 'hold')
 ```
 #### Load required libraries
-```{r libraries, echo=TRUE}
+
+```r
 library(ggplot2)
 ```
 
 ## Loading and Preprocessing the data
-```{r data, echo=TRUE}
+
+```r
 data<- read.csv('activity.csv', header = TRUE, sep = ",",
                   colClasses=c("numeric", "character", "numeric"))
 data$date<- as.Date(data$date, format = "%Y-%m-%d")
@@ -27,28 +30,44 @@ data$interval <- as.factor(data$interval)
 
 ## What is mean total number of steps taken per day?
 #### 1. Calculating total steps per day
-```{r totalsteps, echo=TRUE}
+
+```r
 stepsPerDay <- aggregate(steps~date, data, sum)
 colnames(stepsPerDay) <- c("date", "steps")
 head(stepsPerDay)
 ```
+
+```
+##         date steps
+## 1 2012-10-02   126
+## 2 2012-10-03 11352
+## 3 2012-10-04 12116
+## 4 2012-10-05 13294
+## 5 2012-10-06 15420
+## 6 2012-10-07 11015
+```
 #### 2. Histogram for total number of steps taken each day
-```{r Histogram, echo=TRUE}
+
+```r
 ggplot(stepsPerDay, aes(x = steps)) + 
        geom_histogram(fill = "green", binwidth = 1000) + 
         labs(title="Histogram of Steps Taken per Day", 
              x = "Number of Steps per Day", y = "Number of times in a day(Count)") + theme_bw() 
 ```
+
+![plot of chunk Histogram](figure/Histogram-1.png)
   
 #### 3. Mean and median of the total number of steps taken per day
-```{r mean, echo=TRUE}
+
+```r
 stepsMean <- mean(stepsPerDay$steps, na.rm = TRUE)
 stepsMedian <- median(stepsPerDay$steps, na.rm = TRUE)
 ```
-The mean is `r format(stepsMean, digits = 8)`  and median is `r format(stepsMedian, digits =8)` 
+The mean is 10766.189  and median is 10765 
 
 ## What is the average daily activity pattern?
-```{r pattern, echo = TRUE}
+
+```r
 stepsPerInterval <- aggregate(data$steps, 
                                 by = list(interval = data$interval),
                                 FUN=mean, na.rm=TRUE)
@@ -61,34 +80,39 @@ colnames(stepsPerInterval) <- c("interval", "steps")
 ```
 
 #### 1. Time Series Plot of the 5 minute interval and avg number of steps taken
-```{r Plot, echo = TRUE}
+
+```r
 ggplot(stepsPerInterval, aes(x=interval, y=steps)) +   
         geom_line(color="orange", size=1) +  
         labs(title="Average Daily Activity Pattern", x="Interval", y="Number of steps") +  
         theme_bw()
 ```
+
+![plot of chunk Plot](figure/Plot-1.png)
   
 #### 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-```{r maxsteps, echo= TRUE}
+
+```r
 maxInterval <- stepsPerInterval[which.max(stepsPerInterval$steps),]
 ```
-The `r maxInterval$interval` interval has maximum `r round(maxInterval$steps)` steps.  
+The 835 interval has maximum 206 steps.  
 
 ## Imputing missing values
 
 #### 1. Total number of missing values
-```{r missingvalues, echo=TRUE}
 
+```r
 missingVals <- sum(is.na(data$steps))
 ```
-The total number of missing values are `r missingVals`
+The total number of missing values are 2304
 
 #### 2. Strategy for filling in the missing values
 To populate missing values, we choose to replace them with the mean value at the same interval across days. 
 
 We create a function na_fill(d, p) in which the 'd' argument is the 'data' data frame and 'p' arguement is the stepsPerInterval data frame.
 
-```{r fill, echo=TRUE}
+
+```r
 na_fill <- function(d, p) {
         na_index <- which(is.na(d$steps))
         na_replace <- unlist(lapply(na_index, FUN=function(idx){
@@ -103,7 +127,8 @@ na_fill <- function(d, p) {
 
 #### 3. Creating a new dataset that is equal to the original dataset but with the missing data filled in
 
-```{r newdata, echo=TRUE}
+
+```r
 data_fill <- data.frame(  
         steps = na_fill(data, stepsPerInterval),  
         date = data$date,  
@@ -111,11 +136,19 @@ data_fill <- data.frame(
 str(data_fill)
 sum(is.na(data_fill$steps))
 ```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : num  1.717 0.3396 0.1321 0.1509 0.0755 ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: Factor w/ 288 levels "0","5","10","15",..: 1 2 3 4 5 6 7 8 9 10 ...
+## [1] 0
+```
 The out put shows that there are no missing values in the new data set.  
 
 #### 4. Histogram for total number of steps taken each day
-```{r hist, echo=TRUE}
 
+```r
 fillStepsPerDay <- aggregate(steps ~ date, data_fill, sum)
 colnames(fillStepsPerDay) <- c("date","steps")
 
@@ -126,18 +159,21 @@ ggplot(fillStepsPerDay, aes(x = steps)) +
              x = "Number of Steps per Day", y = "Number of times in a day(Count)") + theme_bw() 
 ```
 
+![plot of chunk hist](figure/hist-1.png)
+
 ##### Mean and Median after filling in missing values
-```{r summary, echo=TRUE}
+
+```r
 stepsMeanFill <- mean(fillStepsPerDay$steps, na.rm = TRUE)
 stepsMedianFill <- median(fillStepsPerDay$steps, na.rm = TRUE)
 ```
 
-The new mean obtained after filling in the missing values is `r format(stepsMeanFill, digits =8)`   
-The new median obtained after filling in the missing values is `r format(stepsMedianFill, digits =8)`   
+The new mean obtained after filling in the missing values is 10766.189   
+The new median obtained after filling in the missing values is 10766.189   
 
 #### Does the values differ from the estimates obtained from the first part of the assignment
-Old Estimates: Mean is `r format(stepsMean, digits = 8)` and the Median is `r format(stepsMedian, digits=8)`  
-New Estimates: Mean is `r format(stepsMeanFill, digits =8)` and the Median is `r format(stepsMedianFill, digits =8)`  
+Old Estimates: Mean is 10766.189 and the Median is 10765  
+New Estimates: Mean is 10766.189 and the Median is 10766.189  
 
 We observe that the means are the same but the medians differ slightly.
 
@@ -149,7 +185,8 @@ We do this comparison with the table with filled-in missing values.
 3. Tabulate the average steps per interval for each data set.  
 4. Plot the two data sets side by side for comparison.  
 
-```{r activity, echo=TRUE}
+
+```r
 weekdays_steps <- function(d) {
     weekdays_steps <- aggregate(d$steps, by=list(interval = d$interval),
                           FUN=mean, na.rm=T)
@@ -177,15 +214,17 @@ data_by_weekdays <- function(d) {
     data_by_weekdays
 }
 data_weekdays <- data_by_weekdays(data_fill)
-
 ```
 
-```{r, timeseries, echo=TRUE}
+
+```r
 ggplot(data_weekdays, aes(x=interval, y=steps)) + 
         geom_line(color="violet") + 
         facet_wrap(~ dayofweek, nrow=2, ncol=1) +
         labs(x="Interval", y="Number of steps") +
         theme_bw()
 ```
+
+![plot of chunk timeseries](figure/timeseries-1.png)
   
 By observing the graph above the activity on the weekday's has the greatest peak from all steps intervals. But, we can also observe that weekends activities has more peaks over a hundred than weekdays. 
